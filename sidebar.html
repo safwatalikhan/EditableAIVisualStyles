@@ -1,0 +1,585 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <style>
+      .logo { vertical-align: middle; }
+      ul { list-style-type: none; padding: 0; }
+      h4 { margin: 0; }
+      .loader {
+        margin-top: 200px;
+        margin-left: 65px;
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite; /* Safari */
+        animation: spin 2s linear infinite;
+      }
+
+      /* Safari */
+      @-webkit-keyframes spin {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body onload="storeProperties()">
+    <form class="sidebar branding-below">
+     
+      <div class="block" id="button-bar">
+        <!-- <label class = "green" id ="storeProperties">Loading...</label> -->
+        <div class="loader" id="loadSymbol"></div>
+        <label class="green" id="group1"><b>Change Individual Attributes</b></label>
+        <br><br>
+        <button class="blue" id="bold">Bold</button>
+        <br>
+        <button class="blue" id="italic">Italic</button>
+        <br>
+        <button class="blue" id="underline">Underline</button>
+        <br>
+        <button class="blue" id="setText">Change Element Text Style</button>
+        <br><br>
+        <label class="green" id="group2"><b>Multi Attribute Modification</b></label>
+        <br><br>
+        <button class="blue" id="resizePosition">Resize and Position Elements</button>
+        <br>
+        <button class="blue" id="alignText">Align Elements Text</button>
+        <br>
+        <button class="blue" id="setPosDimMaster">Resize and Position as Master</button>
+        <br>
+        <button class="blue" id="setAlignMaster">Set Alignment as Master</button>
+        <br><br>
+        <br>
+        <label class="green" id="group3"><b>Predict Attributes</b></label>
+        <br><br>
+        <button class="blue" id="predictBoldOrNot">Predict Bold or Not</button>
+        <br>
+        <label class = "green" id ="boldOrNot"></label>
+        <br>
+        <button class="blue" id="predictItalicOrNot">Predict Italic or Not</button>
+        <br>
+        <label class = "green" id ="italicOrNot"></label>
+        <br>
+        <button class="blue" id="predictUnderlinedOrNot">Predict Underlined or Not</button>
+        <br>
+        <label class = "green" id ="underlinedOrNot"></label>
+        <br>
+        <button class="blue" id="predictFont">Predict Font size</button>
+        <br>
+        <label class = "green" id ="fontSizePrediction"></label>
+        <br><br>
+        <label class="green" id="group4"><b>Add-on Suggestions</b></label>
+        <br><br>
+        <button class="blue" id="comboPred">Combo Predict</button>
+        <br>
+        <label class="green" id="preds"></label>
+        <br>
+        <br>
+        <button class="blue" id="logicComb">?</button>
+        <br>
+        <label class="green" id="logC"></label>
+        <br>
+        <button class="blue" id="fixPosition">Fix Position</button>
+        <br><br>
+        <label class = "green" id ="position"></label>
+        <br><br>
+      </div>
+      <h5 class="error" id="error"></h5>
+    </form>
+    
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+      $(function() {
+        
+        $('#italic').click(textItalicize);
+        $('#bold').click(textBold);
+        $('#underline').click(textUnderline);
+        $('#setText').click(setTextProperties);
+        $('#resizePosition').click(resizePosition);
+        $('#alignText').click(alignText);
+        $('#setPosDimMaster').click(setPosDimMaster);
+        $('#setAlignMaster').click(setAlignmentsAsMaster);
+        $('#predictBoldOrNot').click(predictBoldOrNot);
+        $('#predictItalicOrNot').click(predictItalicOrNot);
+        $('#predictUnderlinedOrNot').click(predictUnderlinedOrNot);
+        $('#predictFont').click(predictFont);
+        $('#comboPred').click(combPred);
+        $('#logicComb').click(displayCombLogic);
+        $('#fixPosition').click(fixPosition);
+        
+      });
+      function setButtonsVisibility(state) {
+        var attributes = ["bold","italic","underline","setText","resizePosition","alignText","setPosDimMaster","setAlignMaster","predictBoldOrNot","predictItalicOrNot","predictUnderlinedOrNot","predictFont","comboPred","logicComb","fixPosition","group1","group2","group3","group4"];
+        attributes.forEach(function(attribute) {
+            document.getElementById(attribute).style.visibility = state;
+        });
+      }
+      function storeProperties() {
+        setButtonsVisibility("hidden");
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(properties, element) {
+              element.disabled = false;
+              
+              if(properties) {
+                // $('#storeProperties').text('Collected text properties successfully!');
+                $('#storeProperties').text('');
+                document.getElementById("loadSymbol").style.display = "none";
+                setButtonsVisibility("visible");
+                document.getElementById("logicComb").style.display = "none";
+                document.getElementById("logC").style.display = "none";
+              }
+              
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .storeProperties();
+            
+            
+      }
+      function textItalicize() {
+      this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .italicizeSelectedElements(true);
+      }
+      function textBold() {
+      this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .boldSelectedElements(true);
+      }
+      
+      function textUnderline() {
+      this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .underlineSelectedElements(true);
+      }
+
+      function textAlign() {
+      this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .setAlignment();
+      }
+
+      function setTextProperties(){
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .setTextProp();
+         
+
+
+      }
+      function resizePosition(){
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .resizeAndPosition();
+         
+
+
+      }
+      function getTextProperties() {
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .getTextProp();
+      }
+      function alignText(){
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .alignParagraphText();
+         
+
+
+      }
+
+
+      function setPosDimMaster(){
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .setPositionsDimensionsAsMaster();
+         
+
+
+      }
+
+      function setAlignmentsAsMaster(){
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(numOfSelectedElements, element) {
+              element.disabled = false;
+              if (numOfSelectedElements === 0) {
+                $('#error').empty()
+                    .append('Did you select any element?')
+                    .append('<br/>')
+                    .append('Please select slides or individual elements.');
+              }
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .setAlignmentsAsMaster();
+         
+
+
+      }
+      
+      function predictBoldOrNot(){
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(bold, element) {
+              element.disabled = false;
+              // if (bold === 'true') {
+              //   $('#boldOrNot').text('Should be bold.');
+              // }
+              // else $('#boldOrNot').text('Should not be bold.');
+              $('#boldOrNot').html(bold);
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .predictBold();
+         
+
+
+      }
+      function combPred(){
+        this.disabled = true;
+        $('#error').text('');
+        document.getElementById('logicComb').style.display = "none";
+        document.getElementById('logC').style.display = "none"
+        google.script.run
+            .withSuccessHandler(function(preds, element){
+              element.disabled = false;
+              $('#preds').html(preds);
+              document.getElementById('logicComb').style.display = "inline";
+              $('#logC').html('')
+              document.getElementById('logC').style.display = "inline"
+              return false;
+            })
+            .withFailureHandler(function(msg,element){
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+            })
+            .withUserObject(this)
+            .comboPredict();
+            
+            
+
+      }
+      function displayCombLogic(){
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(preds, element){
+              element.disabled = false;
+              $('#logC').html(preds);
+              return false;
+            })
+            .withFailureHandler(function(msg,element){
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+            })
+            .withUserObject(this)
+            .logicExplain();
+      }
+      function predictItalicOrNot() {
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(italic, element) {
+              element.disabled = false;
+              // if (italic === 'true') {
+              //   $('#italicOrNot').text('Should be italic.');
+              // }
+              // else $('#italicOrNot').text('Should not be italic.');
+              $('#italicOrNot').html(italic);
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .predictItalic();
+      }
+      function predictUnderlinedOrNot() {
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(underline, element) {
+              element.disabled = false;
+              // if (underline==='true') {
+              //   $('#underlinedOrNot').text('Should be underlined.');
+              // }
+              // else $('#underlinedOrNot').text('Should not be underlined.');
+              $('#underlinedOrNot').html(underline);
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .predictUnderline();
+      }
+      function predictFont() {
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(fontsize, element) {
+              element.disabled = false;
+              $('#fontSizePrediction').html(fontsize);
+              return false;
+             })
+            .withFailureHandler(function(msg, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .predictFontSize();
+            
+            
+      }
+      function fixPosition() {
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(position, element) {
+              element.disabled = false;
+              // if(!position) $('#position').text('Positioned perfectly!');
+              // else if(position) $('#position').text('Element is moved.');
+              $('#position').text(position);
+              
+              return false;
+             })
+            .withFailureHandler(function(position, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .fixPosition();
+           
+            
+      }
+      function assessFontSizePrediction() {
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(position, element) {
+              element.disabled = false;
+              $('#fontSizePredictionAccuracy').text(position);
+              
+              return false;
+             })
+            .withFailureHandler(function(position, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .assessFontSizePrediction();
+           
+            
+      }
+      function assessBoldPrediction() {
+        this.disabled = true;
+        $('#error').text('');
+        google.script.run
+            .withSuccessHandler(function(position, element) {
+              element.disabled = false;
+              $('#boldPredictionAccuracy').text(position);
+              
+              return false;
+             })
+            .withFailureHandler(function(position, element) {
+              element.disabled = false;
+              $('#error').text('Something went wrong. Please check the add-on logs.');
+              return false;
+            })
+            .withUserObject(this)
+            .assessBoldPrediction();
+           
+            
+      }
+
+    </script>
+    
+  </body>
+</html>
